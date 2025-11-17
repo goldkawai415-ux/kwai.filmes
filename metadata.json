@@ -1,0 +1,5 @@
+{
+  "name": "Kwai-filmesonline",
+  "description": "A video catalog streaming site with a complete admin panel (CMS) for total content management (movies, series, categories, users, and appearance).",
+  "requestFramePermissions": []
+}
