@@ -49,6 +49,13 @@ export interface Tag {
   name: string;
 }
 
+export interface Channel {
+  id: string;
+  name: string;
+  logoUrl: string;
+  videoUrl: string;
+}
+
 export interface ContentShelf {
   id: string;
   title: string;

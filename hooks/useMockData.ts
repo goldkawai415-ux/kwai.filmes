@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Movie, Series, Genre, Tag, ContentShelf } from '../types';
+import { Movie, Series, Genre, Tag, ContentShelf, Channel } from '../types';
 
 // Mock Data
 const genres: Genre[] = [
@@ -86,11 +86,19 @@ const homeShelves: ContentShelf[] = [
     { id: 'shelf4', title: 'Ação e Aventura', items: allMedia.filter(m => m.genres.some(g => g.name === 'Ação')) },
 ];
 
+const mockChannels: Channel[] = Array.from({ length: 15 }, (_, i) => ({
+  id: `ch${i + 1}`,
+  name: `Canal ${i + 1}`,
+  logoUrl: `https://picsum.photos/seed/channellogo${i}/100/100?grayscale`,
+  videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+}));
+
 export function useMockData() {
   const [media, setMedia] = useState<(Movie | Series)[]>(allMedia);
   const [shelves, setShelves] = useState<ContentShelf[]>(homeShelves);
   const [_genres, setGenres] = useState<Genre[]>(genres);
   const [_tags, setTags] = useState<Tag[]>(tags);
+  const [channels, setChannels] = useState<Channel[]>(mockChannels);
 
   const getMediaById = useCallback((type: 'movie' | 'series', id: string) => {
     return media.find(m => m.type === type && m.id === id);
@@ -107,5 +115,6 @@ export function useMockData() {
     getFeaturedItems,
     genres: _genres,
     tags: _tags,
+    channels,
   };
 }

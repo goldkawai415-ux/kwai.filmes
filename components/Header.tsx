@@ -7,6 +7,7 @@ const Header: React.FC = () => {
   const navItems = [
     { name: 'Filmes', path: '/catalog?type=movie' },
     { name: 'Séries', path: '/catalog?type=series' },
+    { name: 'TV ao Vivo', path: '/live-tv' },
     { name: 'Gêneros', path: '/catalog' },
     { name: 'Lançamentos', path: '/catalog?tag=lançamento' },
   ];
