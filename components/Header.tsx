@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
@@ -39,11 +38,6 @@ const Header: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <Link to="/login">
-            <div className="h-10 w-10 bg-accent rounded-full flex items-center justify-center text-white font-bold">
-              U
-            </div>
-          </Link>
         </div>
       </div>
     </header>
