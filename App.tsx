@@ -10,7 +10,6 @@ import LiveTvPage from './pages/LiveTvPage';
 import AdminLayout from './pages/Admin/AdminLayout';
 import DashboardPage from './pages/Admin/DashboardPage';
 import MediaManagementPage from './pages/Admin/MediaManagementPage';
-import LiveTvManagementPage from './pages/Admin/LiveTvManagementPage';
 import TaxonomyPage from './pages/Admin/TaxonomyPage';
 import AppearancePage from './pages/Admin/AppearancePage';
 import UsersPage from './pages/Admin/UsersPage';
@@ -52,7 +51,6 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="dashboard" />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="media" element={<MediaManagementPage />} />
-            <Route path="live-tv" element={<LiveTvManagementPage />} />
             <Route path="taxonomy" element={<TaxonomyPage />} />
             <Route path="appearance" element={<AppearancePage />} />
             <Route path="users" element={<UsersPage />} />
