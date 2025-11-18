@@ -13,12 +13,21 @@ import MediaManagementPage from './pages/Admin/MediaManagementPage';
 import TaxonomyPage from './pages/Admin/TaxonomyPage';
 import AppearancePage from './pages/Admin/AppearancePage';
 import UsersPage from './pages/Admin/UsersPage';
+import { useMockData } from './hooks/useMockData';
 
 export const AuthContext = React.createContext<{
   isAuthenticated: boolean;
   login: () => void;
   logout: () => void;
 } | null>(null);
+
+type DataContextType = ReturnType<typeof useMockData>;
+export const DataContext = React.createContext<DataContextType | null>(null);
+
+const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const data = useMockData();
+    return <DataContext.Provider value={data}>{children}</DataContext.Provider>;
+}
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,30 +44,32 @@ const App: React.FC = () => {
 
   return (
     <AuthContext.Provider value={authContextValue}>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/media/:type/:id" element={<DetailPage />} />
-          <Route path="/catalog" element={<CatalogPage />} />
-          <Route path="/live-tv" element={<LiveTvPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          
-          <Route path="/admin" element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }>
-            <Route index element={<Navigate to="dashboard" />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="media" element={<MediaManagementPage />} />
-            <Route path="taxonomy" element={<TaxonomyPage />} />
-            <Route path="appearance" element={<AppearancePage />} />
-            <Route path="users" element={<UsersPage />} />
-          </Route>
+      <DataProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/media/:type/:id" element={<DetailPage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/live-tv" element={<LiveTvPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="media" element={<MediaManagementPage />} />
+              <Route path="taxonomy" element={<TaxonomyPage />} />
+              <Route path="appearance" element={<AppearancePage />} />
+              <Route path="users" element={<UsersPage />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </HashRouter>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </HashRouter>
+      </DataProvider>
     </AuthContext.Provider>
   );
 };

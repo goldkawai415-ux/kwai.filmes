@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMockData } from '../hooks/useMockData';
+import { DataContext } from '../App';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import VideoPlayer from '../components/VideoPlayer';
@@ -9,7 +9,10 @@ import { Series } from '../types';
 
 const DetailPage: React.FC = () => {
   const { type, id } = useParams<{ type: 'movie' | 'series', id: string }>();
-  const { getMediaById } = useMockData();
+  const dataContext = useContext(DataContext);
+  if (!dataContext) throw new Error("DataContext is not available");
+  
+  const { getMediaById } = dataContext;
   const [showPlayer, setShowPlayer] = useState(false);
   
   const item = getMediaById(type as 'movie' | 'series', id || '');

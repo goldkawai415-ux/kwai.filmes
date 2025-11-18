@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useContext } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import HeroCarousel from '../components/HeroCarousel';
 import ContentShelf from '../components/ContentShelf';
-import { useMockData } from '../hooks/useMockData';
+import { DataContext } from '../App';
 
 const HomePage: React.FC = () => {
-  const { homeShelves, getFeaturedItems } = useMockData();
+  const dataContext = useContext(DataContext);
+  if (!dataContext) throw new Error("DataContext is not available");
+  
+  const { homeShelves, getFeaturedItems } = dataContext;
   const featuredItems = getFeaturedItems();
 
   return (

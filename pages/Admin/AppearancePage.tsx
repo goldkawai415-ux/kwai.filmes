@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
-import { useMockData } from '../../hooks/useMockData';
+import React, { useState, useContext } from 'react';
+import { DataContext } from '../../App';
 
 const AppearancePage: React.FC = () => {
-  const { homeShelves } = useMockData();
+  const dataContext = useContext(DataContext);
+  if (!dataContext) throw new Error("DataContext not found");
+  const { homeShelves } = dataContext;
+
   const [accentColor, setAccentColor] = useState('#FF6B00');
   const [secondaryAccentColor, setSecondaryAccentColor] = useState('#FFC107');
 

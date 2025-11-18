@@ -1,39 +1,91 @@
 
-import React, { useState } from 'react';
-import { useMockData } from '../../hooks/useMockData';
-import { Genre, Tag } from '../../types';
+import React, { useState, useContext } from 'react';
+import { DataContext } from '../../App';
+import { Genre, Tag, Channel } from '../../types';
 
-const TaxonomyItem: React.FC<{item: Genre | Tag}> = ({item}) => (
+const TaxonomyItem: React.FC<{item: Genre | Tag, onDelete: (id: string) => void}> = ({item, onDelete}) => (
     <li className="flex justify-between items-center p-3 bg-gray-700 rounded">
         <span>{item.name}</span>
         <div className="space-x-2">
             <button className="font-medium text-sm text-blue-500 hover:underline">Editar</button>
-            <button className="font-medium text-sm text-red-500 hover:underline">Excluir</button>
+            <button onClick={() => onDelete(item.id)} className="font-medium text-sm text-red-500 hover:underline">Excluir</button>
         </div>
     </li>
 )
 
+const defaultChannel: Omit<Channel, 'id'> = { name: '', logoUrl: '', videoUrl: '' };
+
 const TaxonomyPage: React.FC = () => {
-    const { genres, tags, channels } = useMockData();
+    const dataContext = useContext(DataContext);
+    if (!dataContext) throw new Error("DataContext not found");
+    const { 
+        genres, tags, channels,
+        addGenre, deleteGenre,
+        addTag, deleteTag,
+        addChannel, updateChannel, deleteChannel
+    } = dataContext;
+
+    const [newGenreName, setNewGenreName] = useState('');
+    const [newTagName, setNewTagName] = useState('');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
+    const [channelFormData, setChannelFormData] = useState<Omit<Channel, 'id'> | Channel>(defaultChannel);
+
+    const handleAddGenre = (e: React.FormEvent) => {
+        e.preventDefault();
+        addGenre(newGenreName);
+        setNewGenreName('');
+    }
+
+    const handleAddTag = (e: React.FormEvent) => {
+        e.preventDefault();
+        addTag(newTagName);
+        setNewTagName('');
+    }
+    
+    const openAddChannelModal = () => {
+      setEditingChannel(null);
+      setChannelFormData(defaultChannel);
+      setIsModalOpen(true);
+    };
+    
+    const openEditChannelModal = (channel: Channel) => {
+      setEditingChannel(channel);
+      setChannelFormData(channel);
+      setIsModalOpen(true);
+    };
+
+    const handleChannelFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setChannelFormData(prev => ({...prev, [name]: value}));
+    };
+
+    const handleChannelSave = () => {
+      if(editingChannel) {
+        updateChannel(channelFormData as Channel);
+      } else {
+        addChannel(channelFormData);
+      }
+      setIsModalOpen(false);
+    };
 
     const AddChannelForm = () => (
-      <form className="space-y-4">
+      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleChannelSave(); }}>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Nome do Canal</label>
-          <input type="text" placeholder="Ex: Canal de Notícias 24h" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+          <input name="name" value={channelFormData.name} onChange={handleChannelFormChange} type="text" placeholder="Ex: Canal de Notícias 24h" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" required />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">URL do Logo</label>
-          <input type="text" placeholder="https://exemplo.com/logo.png" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+          <input name="logoUrl" value={channelFormData.logoUrl} onChange={handleChannelFormChange} type="text" placeholder="https://exemplo.com/logo.png" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" required/>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">URL do Vídeo (Stream)</label>
-          <input type="text" placeholder="https://exemplo.com/stream.m3u8" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+          <input name="videoUrl" value={channelFormData.videoUrl} onChange={handleChannelFormChange} type="text" placeholder="https://exemplo.com/stream.m3u8" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" required/>
         </div>
       </form>
     );
-
 
     return (
         <div>
@@ -43,24 +95,24 @@ const TaxonomyPage: React.FC = () => {
                 {/* Genres */}
                 <div className="bg-gray-800 p-6 rounded-lg">
                     <h2 className="text-xl font-semibold text-white mb-4">Gêneros</h2>
-                    <div className="flex gap-2 mb-4">
-                        <input type="text" placeholder="Novo gênero..." className="flex-grow bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
-                        <button className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">Adicionar</button>
-                    </div>
+                    <form onSubmit={handleAddGenre} className="flex gap-2 mb-4">
+                        <input value={newGenreName} onChange={(e) => setNewGenreName(e.target.value)} type="text" placeholder="Novo gênero..." className="flex-grow bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                        <button type="submit" className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">Adicionar</button>
+                    </form>
                     <ul className="space-y-2">
-                        {genres.map(genre => <TaxonomyItem key={genre.id} item={genre} />)}
+                        {genres.map(genre => <TaxonomyItem key={genre.id} item={genre} onDelete={deleteGenre} />)}
                     </ul>
                 </div>
 
                 {/* Tags */}
                 <div className="bg-gray-800 p-6 rounded-lg">
                     <h2 className="text-xl font-semibold text-white mb-4">Tags</h2>
-                     <div className="flex gap-2 mb-4">
-                        <input type="text" placeholder="Nova tag..." className="flex-grow bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
-                        <button className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">Adicionar</button>
-                    </div>
+                     <form onSubmit={handleAddTag} className="flex gap-2 mb-4">
+                        <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} type="text" placeholder="Nova tag..." className="flex-grow bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+                        <button type="submit" className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">Adicionar</button>
+                    </form>
                     <ul className="space-y-2">
-                        {tags.map(tag => <TaxonomyItem key={tag.id} item={tag} />)}
+                        {tags.map(tag => <TaxonomyItem key={tag.id} item={tag} onDelete={deleteTag}/>)}
                     </ul>
                 </div>
             </div>
@@ -69,7 +121,7 @@ const TaxonomyPage: React.FC = () => {
             <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-white">Canais de TV ao Vivo</h2>
-                    <button onClick={() => setIsModalOpen(true)} className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">
+                    <button onClick={openAddChannelModal} className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">
                         Adicionar Canal
                     </button>
                 </div>
@@ -91,8 +143,8 @@ const TaxonomyPage: React.FC = () => {
                                         </td>
                                         <th scope="row" className="px-6 py-4 font-medium text-white whitespace-nowrap">{channel.name}</th>
                                         <td className="px-6 py-4 space-x-2">
-                                            <button className="font-medium text-blue-500 hover:underline">Editar</button>
-                                            <button className="font-medium text-red-500 hover:underline">Excluir</button>
+                                            <button onClick={() => openEditChannelModal(channel)} className="font-medium text-blue-500 hover:underline">Editar</button>
+                                            <button onClick={() => deleteChannel(channel.id)} className="font-medium text-red-500 hover:underline">Excluir</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -106,7 +158,7 @@ const TaxonomyPage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
                 <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
                     <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Adicionar Novo Canal</h2>
+                        <h2 className="text-xl font-bold">{editingChannel ? 'Editar' : 'Adicionar Novo'} Canal</h2>
                         <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
@@ -118,7 +170,7 @@ const TaxonomyPage: React.FC = () => {
                     <button onClick={() => setIsModalOpen(false)} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors">
                         Cancelar
                     </button>
-                    <button onClick={() => setIsModalOpen(false)} className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">
+                    <button onClick={handleChannelSave} className="bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition-colors">
                         Salvar
                     </button>
                     </div>

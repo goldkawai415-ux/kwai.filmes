@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { Movie, Series, Genre, Tag, ContentShelf, Channel } from '../types';
 
 // Mock Data
-const genres: Genre[] = [
+const genresData: Genre[] = [
   { id: 'g1', name: 'Ação' },
   { id: 'g2', name: 'Comédia' },
   { id: 'g3', name: 'Drama' },
@@ -12,7 +12,7 @@ const genres: Genre[] = [
   { id: 'g6', name: 'Documentário' },
 ];
 
-const tags: Tag[] = [
+const tagsData: Tag[] = [
   { id: 't1', name: 'Lançamento' },
   { id: 't2', name: 'HD' },
   { id: 't3', name: '4K' },
@@ -27,8 +27,8 @@ const mockMovies: Movie[] = Array.from({ length: 12 }, (_, i) => ({
   year: 2023 - (i % 5),
   posterUrl: `https://picsum.photos/seed/movie${i}/400/600`,
   bannerUrl: `https://picsum.photos/seed/moviebanner${i}/1280/720`,
-  genres: [genres[i % 3], genres[(i + 1) % 3]],
-  tags: i < 3 ? [tags[0], tags[1]] : [tags[1]],
+  genres: [genresData[i % 3], genresData[(i + 1) % 3]],
+  tags: i < 3 ? [tagsData[0], tagsData[1]] : [tagsData[1]],
   cast: ['Ator Principal', 'Atriz Principal', 'Coadjuvante Famoso'],
   director: 'Diretor Renomado',
   rating: '14',
@@ -44,8 +44,8 @@ const mockSeries: Series[] = Array.from({ length: 8 }, (_, i) => ({
   year: 2024 - (i % 3),
   posterUrl: `https://picsum.photos/seed/series${i}/400/600`,
   bannerUrl: `https://picsum.photos/seed/seriesbanner${i}/1280/720`,
-  genres: [genres[(i + 2) % 4], genres[(i + 3) % 4]],
-  tags: i < 2 ? [tags[3], tags[2]] : [tags[2]],
+  genres: [genresData[(i + 2) % 4], genresData[(i + 3) % 4]],
+  tags: i < 2 ? [tagsData[3], tagsData[2]] : [tagsData[2]],
   cast: ['Protagonista', 'Antagonista', 'Elenco de Suporte'],
   director: 'Criador da Série',
   rating: '16',
@@ -96,9 +96,11 @@ const mockChannels: Channel[] = Array.from({ length: 15 }, (_, i) => ({
 export function useMockData() {
   const [media, setMedia] = useState<(Movie | Series)[]>(allMedia);
   const [shelves, setShelves] = useState<ContentShelf[]>(homeShelves);
-  const [_genres, setGenres] = useState<Genre[]>(genres);
-  const [_tags, setTags] = useState<Tag[]>(tags);
+  const [genres, setGenres] = useState<Genre[]>(genresData);
+  const [tags, setTags] = useState<Tag[]>(tagsData);
   const [channels, setChannels] = useState<Channel[]>(mockChannels);
+  
+  const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}`;
 
   const getMediaById = useCallback((type: 'movie' | 'series', id: string) => {
     return media.find(m => m.type === type && m.id === id);
@@ -107,14 +109,68 @@ export function useMockData() {
   const getFeaturedItems = useCallback(() => {
       return [...mockMovies.slice(0,3), ...mockSeries.slice(0,2)].sort(() => 0.5 - Math.random());
   }, []);
+  
+  // Media CRUD
+  const addMedia = (item: Omit<Movie, 'id' | 'type'> | Omit<Series, 'id' | 'type'>, type: 'movie' | 'series') => {
+    const newItem = { ...item, id: generateId(type), type } as Movie | Series;
+    setMedia(prev => [newItem, ...prev]);
+  };
+  const updateMedia = (updatedItem: Movie | Series) => {
+    setMedia(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
+  };
+  const deleteMedia = (id: string) => {
+    setMedia(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Genre CRUD
+  const addGenre = (name: string) => {
+    if (name.trim() === '') return;
+    const newGenre = { id: generateId('g'), name };
+    setGenres(prev => [...prev, newGenre]);
+  };
+  const deleteGenre = (id: string) => {
+    setGenres(prev => prev.filter(g => g.id !== id));
+  };
+  
+  // Tag CRUD
+  const addTag = (name: string) => {
+    if (name.trim() === '') return;
+    const newTag = { id: generateId('t'), name };
+    setTags(prev => [...prev, newTag]);
+  };
+  const deleteTag = (id: string) => {
+    setTags(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Channel CRUD
+  const addChannel = (channel: Omit<Channel, 'id'>) => {
+    const newChannel = { ...channel, id: generateId('ch') };
+    setChannels(prev => [newChannel, ...prev]);
+  };
+  const updateChannel = (updatedChannel: Channel) => {
+    setChannels(prev => prev.map(ch => (ch.id === updatedChannel.id ? updatedChannel : ch)));
+  };
+  const deleteChannel = (id: string) => {
+    setChannels(prev => prev.filter(ch => ch.id !== id));
+  };
 
   return {
     allMedia: media,
     getMediaById,
     homeShelves: shelves,
     getFeaturedItems,
-    genres: _genres,
-    tags: _tags,
+    genres,
+    tags,
     channels,
+    addMedia,
+    updateMedia,
+    deleteMedia,
+    addGenre,
+    deleteGenre,
+    addTag,
+    deleteTag,
+    addChannel,
+    updateChannel,
+    deleteChannel,
   };
 }

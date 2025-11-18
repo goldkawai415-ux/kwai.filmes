@@ -1,13 +1,16 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PosterCard from '../components/PosterCard';
-import { useMockData } from '../hooks/useMockData';
+import { DataContext } from '../App';
 import { Genre } from '../types';
 
 const CatalogPage: React.FC = () => {
-  const { allMedia, genres } = useMockData();
+  const dataContext = useContext(DataContext);
+  if (!dataContext) throw new Error("DataContext is not available");
+
+  const { allMedia, genres } = dataContext;
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
   const [sortOrder, setSortOrder] = useState('recent');
