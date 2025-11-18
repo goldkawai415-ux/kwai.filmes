@@ -14,13 +14,16 @@ const LiveTvPage: React.FC = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
 
   useEffect(() => {
-    if (channels.length > 0 && !selectedChannel) {
+    if (channels.length > 0) {
+      // If no channel is selected OR if the currently selected channel was deleted
+      if (!selectedChannel || !channels.some(c => c.id === selectedChannel.id)) {
         setSelectedChannel(channels[0]);
+      }
+    } else {
+      // If there are no channels, clear selection
+      setSelectedChannel(null);
     }
-    if (channels.length === 0) {
-        setSelectedChannel(null);
-    }
-  }, [channels, selectedChannel]);
+  }, [channels]);
 
   if (channels.length === 0) {
     return (

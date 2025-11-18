@@ -1,7 +1,7 @@
 
 import React, { useState, useContext } from 'react';
 import { DataContext } from '../../App';
-import { Movie, Series } from '../../types';
+import { Movie, Series, Season, Episode } from '../../types';
 
 const defaultMovie: Omit<Movie, 'id'> = {
   title: '', synopsis: '', year: new Date().getFullYear(), posterUrl: '', bannerUrl: '', genres: [], tags: [], cast: [], director: '', rating: 'L', type: 'movie', duration: 0, videoUrl: ''
@@ -31,33 +31,95 @@ const MediaManagementPage: React.FC = () => {
   
   const openEditModal = (item: Movie | Series) => {
     setEditingMedia(item);
-    setFormData(item);
+    setFormData(JSON.parse(JSON.stringify(item))); // Deep copy to avoid direct mutation
     setIsModalOpen(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({...prev, [name]: value}));
+    const parsedValue = e.target.type === 'number' ? parseInt(value, 10) || 0 : value;
+    setFormData(prev => ({...prev, [name]: parsedValue}));
   }
 
   const handleSave = () => {
+    if (!formData.title) return; // Basic validation
     if (editingMedia) {
       updateMedia(formData as Movie | Series);
     } else {
       const type = formData.type as 'movie' | 'series';
-      const finalData = { 
-        ...formData, 
-        posterUrl: `https://picsum.photos/seed/${formData.title}/400/600`,
-        bannerUrl: `https://picsum.photos/seed/${formData.title}banner/1280/720`,
-        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      };
-      addMedia(finalData as Omit<Movie, 'id'> | Omit<Series, 'id'>, type);
+      addMedia(formData as Omit<Movie, 'id'> | Omit<Series, 'id'>, type);
     }
     setIsModalOpen(false);
   };
+
+  // --- Series Management Handlers ---
+  const handleSeasonChange = (seasonIndex: number, field: keyof Season, value: any) => {
+    setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const seasons = [...updatedSeries.seasons];
+        seasons[seasonIndex] = { ...seasons[seasonIndex], [field]: value };
+        return { ...updatedSeries, seasons };
+    });
+  };
+
+  const handleEpisodeChange = (seasonIndex: number, episodeIndex: number, field: keyof Episode, value: any) => {
+     setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const seasons = JSON.parse(JSON.stringify(updatedSeries.seasons)); // Deep copy
+        seasons[seasonIndex].episodes[episodeIndex] = { ...seasons[seasonIndex].episodes[episodeIndex], [field]: value };
+        return { ...updatedSeries, seasons };
+    });
+  };
+
+  const addSeason = () => {
+     setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const newSeason: Season = {
+            id: `s${updatedSeries.id || 'new'}s${Date.now()}`,
+            seasonNumber: updatedSeries.seasons.length + 1,
+            episodes: []
+        };
+        return { ...updatedSeries, seasons: [...updatedSeries.seasons, newSeason] };
+    });
+  };
+
+  const removeSeason = (seasonIndex: number) => {
+      setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const seasons = updatedSeries.seasons.filter((_, idx) => idx !== seasonIndex);
+        return { ...updatedSeries, seasons };
+    });
+  };
+
+  const addEpisode = (seasonIndex: number) => {
+     setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const seasons = JSON.parse(JSON.stringify(updatedSeries.seasons));
+        const newEpisode: Episode = {
+            id: `s${updatedSeries.id || 'new'}s${seasonIndex}e${Date.now()}`,
+            title: `Novo Episódio`,
+            synopsis: '',
+            thumbnailUrl: `https://picsum.photos/seed/${Date.now()}/400/225`,
+            videoUrl: '',
+            episodeNumber: seasons[seasonIndex].episodes.length + 1
+        };
+        seasons[seasonIndex].episodes.push(newEpisode);
+        return { ...updatedSeries, seasons };
+    });
+  };
+
+  const removeEpisode = (seasonIndex: number, episodeIndex: number) => {
+     setFormData(prev => {
+        const updatedSeries = { ...prev } as Series;
+        const seasons = JSON.parse(JSON.stringify(updatedSeries.seasons));
+        seasons[seasonIndex].episodes = seasons[seasonIndex].episodes.filter((_: any, idx: number) => idx !== episodeIndex);
+        return { ...updatedSeries, seasons };
+    });
+  };
   
-  const AddMediaForm = () => (
+  const MediaForm = () => (
     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+      {/* Common Fields */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Título</label>
         <input name="title" value={formData.title || ''} onChange={handleInputChange} type="text" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" required />
@@ -71,13 +133,65 @@ const MediaManagementPage: React.FC = () => {
           <label className="block text-sm font-medium text-gray-300 mb-1">Ano</label>
           <input name="year" value={formData.year || ''} onChange={handleInputChange} type="number" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
         </div>
-        {formData.type === 'movie' && (
-           <div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Classificação</label>
+          <input name="rating" value={formData.rating || ''} onChange={handleInputChange} type="text" placeholder="L, 12, 14, 16, 18" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">URL do Poster (vertical)</label>
+        <input name="posterUrl" value={formData.posterUrl || ''} onChange={handleInputChange} type="text" placeholder="https://exemplo.com/poster.jpg" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+       <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">URL do Banner (horizontal)</label>
+        <input name="bannerUrl" value={formData.bannerUrl || ''} onChange={handleInputChange} type="text" placeholder="https://exemplo.com/banner.jpg" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+
+      {/* Movie-specific Fields */}
+      {formData.type === 'movie' && (
+        <>
+          <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Duração (minutos)</label>
             <input name="duration" value={(formData as Movie).duration || ''} onChange={handleInputChange} type="number" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">URL do Vídeo</label>
+            <input name="videoUrl" value={(formData as Movie).videoUrl || ''} onChange={handleInputChange} type="text" placeholder="https://exemplo.com/filme.mp4" className="w-full bg-gray-900 border border-gray-700 rounded p-2 focus:outline-none focus:ring-2 focus:ring-accent" />
+          </div>
+        </>
+      )}
+
+      {/* Series-specific Fields */}
+      {formData.type === 'series' && (
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-t border-gray-700 pt-4 mt-4">Temporadas e Episódios</h3>
+            {(formData as Series).seasons?.map((season, sIdx) => (
+                <details key={season.id} className="bg-gray-900/50 p-3 rounded-lg">
+                    <summary className="font-semibold cursor-pointer flex justify-between items-center">
+                        Temporada {season.seasonNumber}
+                        <button type="button" onClick={() => removeSeason(sIdx)} className="text-red-500 hover:text-red-400 text-sm font-medium">Remover Temporada</button>
+                    </summary>
+                    <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-700">
+                        {season.episodes.map((episode, eIdx) => (
+                            <div key={episode.id} className="p-3 bg-gray-800 rounded">
+                                <p className="font-medium text-sm mb-2">Episódio {episode.episodeNumber}</p>
+                                <div className="space-y-2">
+                                     <input value={episode.title} onChange={(e) => handleEpisodeChange(sIdx, eIdx, 'title', e.target.value)} type="text" placeholder="Título do Episódio" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                                     <textarea value={episode.synopsis} onChange={(e) => handleEpisodeChange(sIdx, eIdx, 'synopsis', e.target.value)} rows={2} placeholder="Sinopse do Episódio" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"></textarea>
+                                     <input value={episode.videoUrl} onChange={(e) => handleEpisodeChange(sIdx, eIdx, 'videoUrl', e.target.value)} type="text" placeholder="URL do Vídeo do Episódio" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                                </div>
+                                <div className="text-right mt-2">
+                                    <button type="button" onClick={() => removeEpisode(sIdx, eIdx)} className="text-red-500 hover:text-red-400 text-xs font-medium">Remover Episódio</button>
+                                </div>
+                            </div>
+                        ))}
+                         <button type="button" onClick={() => addEpisode(sIdx)} className="mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded text-sm">Adicionar Episódio</button>
+                    </div>
+                </details>
+            ))}
+            <button type="button" onClick={addSeason} className="mt-4 bg-accent hover:bg-orange-500 text-white font-bold py-2 px-4 rounded">Adicionar Temporada</button>
+        </div>
+      )}
     </form>
   );
 
@@ -135,7 +249,7 @@ const MediaManagementPage: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
-          <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
                 <h2 className="text-xl font-bold">{editingMedia ? 'Editar' : 'Adicionar Nova'} Mídia</h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
@@ -143,7 +257,7 @@ const MediaManagementPage: React.FC = () => {
                 </button>
             </div>
             <div className="p-6 overflow-y-auto">
-              <AddMediaForm />
+              <MediaForm />
             </div>
             <div className="p-4 bg-gray-900/50 border-t border-gray-700 flex justify-end gap-3">
               <button onClick={() => setIsModalOpen(false)} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors">
